@@ -12,3 +12,4 @@ while True:
             #Имя файла .py
             print(os.path.join("/", file))
             print("990")
+            print("11")
