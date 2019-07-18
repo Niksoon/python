@@ -11,3 +11,4 @@ while True:
         if file.endswith(".py"):
             #Имя файла .py
             print(os.path.join("/", file))
+            print("990")
