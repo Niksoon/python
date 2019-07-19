@@ -101,6 +101,85 @@ class Ftp_Connection():
                     else:
                         res = self.conn.retrbinary('RETR %s' % src, f.write, rest = f.tell())
                 except:
+                    self.max_attemps -= 1
+                    #Доработать эту часть кода(уменьшение количесва максимального обращения
+                    if self.max_attemps == 0:
+                        mon.set()
+                        #print("Множество строка 108",mon.set())
+                        logging.exception('')
+                        raise
+                    self.waiting = True
+                    #waiting
+                    logging.info('Ожидание состовляет {} sec...'.formate(self.retry_timeout))
+                    #Приостонавливает выпаолнение программы на self.retry_timeout секунд
+                    time.sleep(self.retry_timeout)
+                    #reconnect
+                    logging.info('Переподключение->>>', time.clock())
+            mon.set()
+
+            if not res.startswith('226 Transfer complete'):
+                logging.error('Файл {} загружен не полностью.' .formate(dest))
+                #os.remove(dest)
+                return None
+            return 1
+
+
+    def put_file(self, src, dest):
+        #Загрузка локального файла в удаленный коталог
+        with open(src, 'rb') as f:
+            self.ptr = f.tell()
+
+            @setInterval(self.monitoring_interval)
+            def monitor():
+                if not self.waiting:
+                    i = f.tell()
+                    if self.ptr < i:
+                        logging.debug("%d - %0.1f Kb/s" %(i, (i - self.ptr) / (1024 * self.monitoring_interval)))
+                        self.ptr = i
+                    else:
+                        self.conn.close()
+            local_file_size = os.stat(src).st_size
+            res = ''
+
+            mon = monitor()
+
+            while local_file_size > f.tell():
+                try:
+                    self.connect()
+                    self.waiting = False
+                    #Возобновить передачу с позиции гле были отключены
+                if f.tell() == 0:
+                    res = self.conn.storbinary('STOR %s' % dest, fp=f)
+                else:
+                    res = self.conn.storbinary('STOR %s' % dest, fp=f, rest=f.tell())
+                except:
+                self.max_attempts -= 1
+                if self.max_attempts == 0:
+                    mon.set()
+                    logging.exception('')
+                    raise
+                self.waiting = True
+                logging.info('waiting {} sec...'.format(self.retry_timeout))
+                time.sleep(self.retry_timeout)
+                logging.info('reconnect')
+
+            mon.set()  # stop monitor
+
+            if not res.startswith('226 Transfer complete'):
+                logging.error('Uploaded file {} is not full. res = {}'.format(dest, res))
+                return None
+            return 1
+
+    def put_file_old(self, src, dest):
+        #Отображение процесса переноса данных на сервер
+        def print_transfer_status(block):
+            nonlocal bytes_transferred, total_bytes
+            bytes_transferred += len(block)
+            if total_bytes > 0:
+                percent = round((bytes_transferred / total_bytes) )
+
+
+
 
 
 #Запуск бесконечного цикла
