@@ -91,7 +91,18 @@ class Ftp_Connection():
             res = ''
 
             mon = monitor()
-            while
+            while remote_file_size > f.tell()
+                try:
+                    self.connect()
+                    self.waiting = False
+                    # Получить позицию файла где произошл разрыв соединения
+                    if f.tell() == 0:
+                        res = self.conn.retrbinary('RETR %s' % src, f.write)
+                    else:
+                        res = self.conn.retrbinary('RETR %s' % src, f.write, rest = f.tell())
+                except:
+
+
 #Запуск бесконечного цикла
 while True:
     #Цикл просмотра файлов в папке  venv
