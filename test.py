@@ -20,6 +20,7 @@ class FTP_Connection():
                 raise
 
 
+
 if __name__ == "__main__":
     #Данные для подключения на FTP Сервер (логин / пароль)
     ftp = FTP_Connection('"speedtest.tele2.net"', 'anonymous', '')
