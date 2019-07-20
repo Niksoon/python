@@ -284,7 +284,7 @@ class Ftp_Connection():
 
 if __name__ == "__main__":
     while True:
-        № path = '/'
+        #path = '/'
         filename = '100GB.zip'
 
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
