@@ -46,8 +46,59 @@ class FTP_Connection():
         self.max_attempts = 15
         # Ожидание ответа
         self.waiting = True
-        # Перерыв на подключение
+        # Перерыв на подключение ожидание прежде чем переподключиться
         self.retry_timeout = 15
+
+    # Директория (является ли путь директорией)
+    def isdir(self, directory):
+        try:
+            #Вернуть список имен файлов возврощаемых командой NLST
+            self.conn.nlst(directory)
+            print('Список имен файлов: ', self.conn.nlst(directory))
+            return True
+        except ftplib.error_temp as err:
+            print('Отлавоиваем ошибки: ',str(err))
+            if re.match('450\s', str(err)):
+                return False
+            else:
+                raise
+    def list(self, directory = ''):
+        # Вернуть список имен файлов используя ftplib.nlst
+        # По умолчанию это список файлов в коревом каталоге пользователя
+        # Или вы можете перейти в путь к каталогу
+        data = []
+        try:
+            data = self.conn.nlst(directory)
+            print('Вернуть список имен файлов используя ftplib.nlst: ', data)
+        except ftplib.error_temp as err:
+            print('Отлавливаем ошибки nlst:',str(err))
+            if str(err) == "550 No files found":
+                # Данные остаются
+                pass
+            else:
+                print("Ошибка: ",format(str(err)))
+        return data
+
+    def make_directory(self, path):
+        try:
+            # Создание нового каталога на сервере
+            self.conn.mkd(path)
+            print('Создание нового каталога: ',self.conn.mkd(path))
+            return  True
+        except:
+            return False
+
+    def delete_directory(self, path):
+        try:
+            # Удаление каталога с имененм path на сервере
+            self.conn.rdm(path)
+            return True
+        except:
+            return False
+
+    def get_file(self, src, dest):
+
+
 
 
 
