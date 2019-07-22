@@ -5,7 +5,7 @@ import time
 import threading
 import logging
 
-def setInterval(interval, time = -1):
+def setInterval(interval, times = -1):
     print('Вывод первой функции INTERVAL = {0}  TIME = {1} '.format(interval, time))
     # Это будет декоратор с фиксированныи интервалом и параметром times
     def outer_wrap(function):
@@ -109,7 +109,9 @@ class FTP_Connection():
 
             def monitor():
                 if not self.waiting:
-                    logging.debug("%d - %0.1f Kb/s" % (i, (i-self.ptr) / (1024 * self.monitoring_interval)))
+                    i = f.tell()
+                    if self.ptr <i:
+                        logging.debug("%d - %0.1f Kb/s" % (i, (i-self.ptr) / (1024 * self.monitoring_interval)))
                     self.ptr = i
                 else:
                     self.conn.close()
@@ -125,7 +127,7 @@ class FTP_Connection():
                     self.connect()
                     self.waiting = False
                     # возобновить перевод с позиции, где мы были отключены
-                    if f.tell() == 0
+                    if f.tell() == 0:
                         res = self.conn.storbinary('STOR %s' % dest, fp = f)
                     else:
                         res = self.conn.storbynary('STOR $s' % dest, fp = f, rest = f.tell())
@@ -181,7 +183,35 @@ class FTP_Connection():
             except ftplib.error_perm as err:
                 print("Ошибка с расшерением файла: {}".format(str(err)))
             except ftplib.error_reply as err:
-                print()
+                print("Ошибка: {}".format(str(err)))
+
+        def move_file(self, src, dest):
+            print("Перемещение файла {}" .format(self.conn.rename(src, dest)))
+            self.conn.rename(src, dest)
+
+        ### Свойство разрешений! ###
+
+        # Можем писать в каталог
+        def can_write_to_dir(self, path):
+            print("Можем писать в каталог? - ",self._permission_check(path, 'c' )
+            return self._permission_check(path, 'c')
+
+        # Можем создать каталог
+        def can_make_subdirectories(self, path):
+            print("Можем создать каталог? - ", self._permission_check(path, 'm'))
+            return self._permission_check(path, 'm')
+
+        # Можем перечислить директории
+        def can_list_dir(self, path):
+            print("Можем перечислить директории? - " , self._permission_check(path, 'l')
+            return self._permission_check(path, 'l')
+
+        # Проверка разрешений
+        def _permission_check(self, path, perm):
+            try:
+                return perm in self._permission[path]
+
+
 
 
 
