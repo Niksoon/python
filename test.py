@@ -4,6 +4,7 @@ import ftplib
 import time
 import threading
 import logging
+import socket
 
 def setInterval(interval, times = -1):
     print('Вывод первой функции INTERVAL = {0}  TIME = {1} '.format(interval, time))
@@ -209,8 +210,41 @@ class FTP_Connection():
         # Проверка разрешений
         def _permission_check(self, path, perm):
             try:
-                return perm in self._permission[path]
+                return perm in self._permissions[path]
+            except AttributeError:
+                # Запрос всех разрешений
+                self._permissions = {}
+            except KeyError:
+                pass
+            permissions = list(next(obj for obj in self.conn.mlsd(path, ['perm']) if obj[0] == '.')[1]['perm'])
+            self._permissions[path] = permissions
+            print("Заглянем? - ", self._permissions[path])
+            return perm in self._permissions[path]
 
+        def connect(self):
+            try:
+                self.conn = ftplib.FTP(self.host, self.username, self.password)
+                # Переключение в двоичный режим
+                self.conn.sendcmd("TYPE i")
+                # оптимизировать параметры сокета для задачи загрузки
+                self.conn.sock.setsockopt(socket.SQL_SOCKET, socket.SO_KEEPALIVE, 1)
+                # Установите уровень вывода отладки
+                self.conn.set_debuglevel(self.FTP_DEBUG)
+                # Включение пассивного режима
+                self.conn.set_pasv(True)
+            except ftplib.error_perm as err:
+                print("Ошибка: ".format(str(err)))
+
+        def diaconnect(self):
+            self.conn.quit()
+
+if __name__ == "__main__":
+    path = '/'
+    filename = ''
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
+    ftp = FTP_Connection('','','')
+    ftp.put_file(path + filename, path + filename)
+    pass
 
 
 
