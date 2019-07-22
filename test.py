@@ -150,6 +150,40 @@ class FTP_Connection():
         def put_file_old(self,src, dest):
             # Загрузка локального файла src в удаленный каталог
 
+            def print_transfered_status(block):
+                #В случае успешно установленного соединения show_progress = True
+                #обратный вызов будет печатать сообщения о текущем прогрессе
+                nonlocal bytes_transferred, total_bytes
+                bytes_transferrede =+len(block)
+                #
+                if total_bytes > 0:
+                    # округление переданой информации в процентах
+                    percent = round((bytes_transferred / total_bytes) * 100, 2)
+                    print("{} / {}  байт ({}%)".format(bytes_transferred, total_bytes, percent))
+                else:
+                    print("{} байт ".format(bytes_transferred))
+                return block
+            # путь является файлом
+            if os.path.isfile(src):
+                with open(src, 'rb') as fh:
+                    if self.show_progress:
+                        total_bytes = os.path.getsize(src)
+                        bytes_transferred = 0
+                        self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh, callback = print_transfered_status)
+                    else:
+                        self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh)
+            else:
+                print("Локальный файл {} не найден!".format(src))
+
+        def delete_file(self, path):
+            try:
+                self.conn.delete(path)
+            except ftplib.error_perm as err:
+                print("Ошибка с расшерением файла: {}".format(str(err)))
+            except ftplib.error_reply as err:
+                print()
+
+
 
 
 
