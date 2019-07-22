@@ -33,7 +33,7 @@ class FtpConnection():
 
     FTP_DEBUG_LEVEL = 2 # 0=none, 1=some output, 2=max debugging output
 
-    def __init__(self, host, username, password, show_progress = False):
+    def __init__(self, host, username, password, show_progress=False):
         self.host = host
         self.username = username
         self.password = password
@@ -56,29 +56,27 @@ class FtpConnection():
         try:
             #Вернуть список имен файлов возврощаемых командой NLST
             self.conn.nlst(directory)
-            print('Список имен файлов: ', self.conn.nlst(directory))
             return True
         except ftplib.error_temp as err:
-            print('Отлавоиваем ошибки: ',str(err))
             if re.match('450\s', str(err)):
                 return False
             else:
                 raise
-    def list(self, directory = ''):
+
+    def list(self, directory =''):
         # Вернуть список имен файлов используя ftplib.nlst
         # По умолчанию это список файлов в коревом каталоге пользователя
         # Или вы можете перейти в путь к каталогу
         data = []
         try:
             data = self.conn.nlst(directory)
-            print('Вернуть список имен файлов используя ftplib.nlst: ', data)
         except ftplib.error_temp as err:
-            print('Отлавливаем ошибки nlst:',str(err))
+            print('Отлавливаем ошибки nlst:', str(err))
             if str(err) == "550 No files found":
                 # Данные остаются
                 pass
             else:
-                print("Ошибка: ",format(str(err)))
+                print("Ошибка: {}" .format(str(err)))
         return data
 
     def make_directory(self, path):
@@ -86,7 +84,7 @@ class FtpConnection():
             # Создание нового каталога на сервере
             self.conn.mkd(path)
             print('Создание нового каталога: ',self.conn.mkd(path))
-            return  True
+            return True
         except:
             return False
 
@@ -111,27 +109,25 @@ class FtpConnection():
             def monitor():
                 if not self.waiting:
                     i = f.tell()
-                    if self.ptr <i:
+                    if self.ptr < i:
                         logging.debug("%d - %0.1f Kb/s" % (i, (i-self.ptr) / (1024 * self.monitoring_interval)))
                     self.ptr = i
                 else:
                     self.conn.close()
             #  размер файла в байтах
-            local_file_size = os.stat(src).st_size
-            print('Размер файла в байтах: ',local_file_size)
-            print('Размер файла в байтах: ',local_file_size)
+            local_filesize = os.stat(src).st_size
             res = ''
 
             mon = monitor()
-            while local_file_size > f.tell():
+            while local_filesize > f.tell():
                 try:
                     self.connect()
                     self.waiting = False
                     # возобновить перевод с позиции, где мы были отключены
                     if f.tell() == 0:
-                        res = self.conn.storbinary('STOR %s' % dest, fp = f)
+                        res = self.conn.storbinary('STOR %s' % dest, fp=f)
                     else:
-                        res = self.conn.storbynary('STOR $s' % dest, fp = f, rest = f.tell())
+                        res = self.conn.storbinary('STOR $s' % dest, fp=f, rest=f.tell())
                 except:
                     self.max_attempts -= 1
                     if self.max_attempts == 0:
@@ -146,19 +142,18 @@ class FtpConnection():
 
             mon.set()
             if not res.startswith('226 Transfer complete'):
-                logging.error('Загружаемый файл {} не полон.' .format(dest, res))
+                logging.error('Загружаемый файл {} не полон. res = {} ' .format(dest, res))
                 return None
             return 1
 
-    def put_file_old(self,src, dest):
+    def put_file_old(self, src, dest):
         # Загрузка локального файла src в удаленный каталог
 
-        def print_transfered_status(block):
+        def print_transfer_status(block):
             #В случае успешно установленного соединения show_progress = True
             #обратный вызов будет печатать сообщения о текущем прогрессе
             nonlocal bytes_transferred, total_bytes
-            bytes_transferrede =+len(block)
-            #
+            bytes_transferred += len(block)
             if total_bytes > 0:
                 # округление переданой информации в процентах
                 percent = round((bytes_transferred / total_bytes) * 100, 2)
@@ -172,9 +167,9 @@ class FtpConnection():
                 if self.show_progress:
                     total_bytes = os.path.getsize(src)
                     bytes_transferred = 0
-                    self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh, callback = print_transfered_status)
+                    self.conn.storbinary(cmd='STOR {}'.format(dest), fp=fh, callback=print_transfer_status)
                 else:
-                    self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh)
+                    self.conn.storbinary(cmd='STOR {}'.format(dest), fp=fh)
         else:
             print("Локальный файл {} не найден!".format(src))
 
@@ -235,7 +230,7 @@ class FtpConnection():
         except ftplib.error_perm as err:
             print("Ошибка: ".format(str(err)))
 
-    def diaconnect(self):
+    def disconnect(self):
         self.conn.quit()
 
 if __name__ == "__main__":
