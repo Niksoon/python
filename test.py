@@ -3,6 +3,7 @@ import re
 import ftplib
 import time
 import threading
+import logging
 
 def setInterval(interval, time = -1):
     print('Вывод первой функции INTERVAL = {0}  TIME = {1} '.format(interval, time))
@@ -96,7 +97,62 @@ class FTP_Connection():
         except:
             return False
 
-    def get_file(self, src, dest):
+    def put_file(self, src, dest):
+        # Загрузка локального файла  src на сервер
+        # Открытие файла на чтение - r открытие в двоичном коде b
+        with open(src, 'rb') as f:
+            # Возвращает текущую позицию указателя в файле относительно его начала.
+            self.ptr = f.tell()
+            print('Текущая позиция указателя относительно его начала: ', f.tell())
+
+            @setInterval(self.monitoring_interval)
+
+            def monitor():
+                if not self.waiting:
+                    logging.debug("%d - %0.1f Kb/s" % (i, (i-self.ptr) / (1024 * self.monitoring_interval)))
+                    self.ptr = i
+                else:
+                    self.conn.close()
+            #  размер файла в байтах
+            local_file_size = os.start(src).st_size
+            print('Размер файла в байтах: ',local_file_size)
+            print('Размер файла в байтах: ',local_file_size)
+            res = ''
+
+            mon = monitor()
+            while local_file_size > f.tell():
+                try:
+                    self.connect()
+                    self.waiting = False
+                    # возобновить перевод с позиции, где мы были отключены
+                    if f.tell() == 0
+                        res = self.conn.storbinary('STOR %s' % dest, fp = f)
+                    else:
+                        res = self.conn.storbynary('STOR $s' % dest, fp = f, rest = f.tell())
+                except:
+                    self.max_attempts -= 1
+                    if self.max_attempts == 0:
+                        # Множества вида Пример: {'h', 'o', 'l', 'e'}
+                        mon.set()
+                        logging.exception('')
+                        raise
+                    self.waiting = True
+                    logging.info('Ожидание ответа {} секунд...'.format(self.retry_timeout))
+                    time.sleep(self.retry_timeout)
+                    logging.info('Попытка подключения к серверу...')
+
+            mon.set()
+            if not res.startswith('226 Transfer complete'):
+                logging.error('Загружаемый файл {} не полон.' .format(dest, res))
+                return None
+            return 1
+
+        def put_file_old(self,src, dest):
+            # Загрузка локального файла src в удаленный каталог
+
+
+
+
 
 
 
