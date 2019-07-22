@@ -29,7 +29,7 @@ def setInterval(interval, times = -1):
         return wrap
     return outer_wrap
 
-class FTP_Connection():
+class FtpConnection():
 
     FTP_DEBUG_LEVEL = 2 # 0=none, 1=some output, 2=max debugging output
 
@@ -117,7 +117,7 @@ class FTP_Connection():
                 else:
                     self.conn.close()
             #  размер файла в байтах
-            local_file_size = os.start(src).st_size
+            local_file_size = os.stat(src).st_size
             print('Размер файла в байтах: ',local_file_size)
             print('Размер файла в байтах: ',local_file_size)
             res = ''
@@ -150,99 +150,99 @@ class FTP_Connection():
                 return None
             return 1
 
-        def put_file_old(self,src, dest):
-            # Загрузка локального файла src в удаленный каталог
+    def put_file_old(self,src, dest):
+        # Загрузка локального файла src в удаленный каталог
 
-            def print_transfered_status(block):
-                #В случае успешно установленного соединения show_progress = True
-                #обратный вызов будет печатать сообщения о текущем прогрессе
-                nonlocal bytes_transferred, total_bytes
-                bytes_transferrede =+len(block)
-                #
-                if total_bytes > 0:
-                    # округление переданой информации в процентах
-                    percent = round((bytes_transferred / total_bytes) * 100, 2)
-                    print("{} / {}  байт ({}%)".format(bytes_transferred, total_bytes, percent))
-                else:
-                    print("{} байт ".format(bytes_transferred))
-                return block
-            # путь является файлом
-            if os.path.isfile(src):
-                with open(src, 'rb') as fh:
-                    if self.show_progress:
-                        total_bytes = os.path.getsize(src)
-                        bytes_transferred = 0
-                        self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh, callback = print_transfered_status)
-                    else:
-                        self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh)
+        def print_transfered_status(block):
+            #В случае успешно установленного соединения show_progress = True
+            #обратный вызов будет печатать сообщения о текущем прогрессе
+            nonlocal bytes_transferred, total_bytes
+            bytes_transferrede =+len(block)
+            #
+            if total_bytes > 0:
+                # округление переданой информации в процентах
+                percent = round((bytes_transferred / total_bytes) * 100, 2)
+                print("{} / {}  байт ({}%)".format(bytes_transferred, total_bytes, percent))
             else:
-                print("Локальный файл {} не найден!".format(src))
+                print("{} байт ".format(bytes_transferred))
+            return block
+        # путь является файлом
+        if os.path.isfile(src):
+            with open(src, 'rb') as fh:
+                if self.show_progress:
+                    total_bytes = os.path.getsize(src)
+                    bytes_transferred = 0
+                    self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh, callback = print_transfered_status)
+                else:
+                    self.conn.storbinary(cmd='STOR {}'.format(dest), fp = fh)
+        else:
+            print("Локальный файл {} не найден!".format(src))
 
-        def delete_file(self, path):
-            try:
-                self.conn.delete(path)
-            except ftplib.error_perm as err:
-                print("Ошибка с расшерением файла: {}".format(str(err)))
-            except ftplib.error_reply as err:
-                print("Ошибка: {}".format(str(err)))
+    def delete_file(self, path):
+        try:
+            self.conn.delete(path)
+        except ftplib.error_perm as err:
+            print("Ошибка с расшерением файла: {}".format(str(err)))
+        except ftplib.error_reply as err:
+            print("Ошибка: {}".format(str(err)))
 
-        def move_file(self, src, dest):
-            print("Перемещение файла {}" .format(self.conn.rename(src, dest)))
-            self.conn.rename(src, dest)
+    def move_file(self, src, dest):
+        print("Перемещение файла {}" .format(self.conn.rename(src, dest)))
+        self.conn.rename(src, dest)
 
-        ### Свойство разрешений! ###
+    ### Свойство разрешений! ###
 
-        # Можем писать в каталог
-        def can_write_to_dir(self, path):
-            print("Можем писать в каталог? - ",self._permission_check(path, 'c' )
-            return self._permission_check(path, 'c')
+    # Можем писать в каталог
+    def can_write_to_dir(self, path):
+        print("Можем писать в каталог? - ",self._permission_check(path, 'c' ))
+        return self._permission_check(path, 'c')
 
-        # Можем создать каталог
-        def can_make_subdirectories(self, path):
-            print("Можем создать каталог? - ", self._permission_check(path, 'm'))
-            return self._permission_check(path, 'm')
+    # Можем создать каталог
+    def can_make_subdirectories(self, path):
+        print("Можем создать каталог? - ", self._permission_check(path, 'm'))
+        return self._permission_check(path, 'm')
 
-        # Можем перечислить директории
-        def can_list_dir(self, path):
-            print("Можем перечислить директории? - " , self._permission_check(path, 'l')
-            return self._permission_check(path, 'l')
+    # Можем перечислить директории
+    def can_list_dir(self, path):
+        print("Можем перечислить директории? - " , self._permission_check(path, 'l'))
+        return self._permission_check(path, 'l')
 
-        # Проверка разрешений
-        def _permission_check(self, path, perm):
-            try:
-                return perm in self._permissions[path]
-            except AttributeError:
-                # Запрос всех разрешений
-                self._permissions = {}
-            except KeyError:
-                pass
-            permissions = list(next(obj for obj in self.conn.mlsd(path, ['perm']) if obj[0] == '.')[1]['perm'])
-            self._permissions[path] = permissions
-            print("Заглянем? - ", self._permissions[path])
+    # Проверка разрешений
+    def _permission_check(self, path, perm):
+        try:
             return perm in self._permissions[path]
+        except AttributeError:
+            # Запрос всех разрешений
+            self._permissions = {}
+        except KeyError:
+            pass
+        permissions = list(next(obj for obj in self.conn.mlsd(path, ['perm']) if obj[0] == '.')[1]['perm'])
+        self._permissions[path] = permissions
+        print("Заглянем? - ", self._permissions[path])
+        return perm in self._permissions[path]
 
-        def connect(self):
-            try:
-                self.conn = ftplib.FTP(self.host, self.username, self.password)
-                # Переключение в двоичный режим
-                self.conn.sendcmd("TYPE i")
-                # оптимизировать параметры сокета для задачи загрузки
-                self.conn.sock.setsockopt(socket.SQL_SOCKET, socket.SO_KEEPALIVE, 1)
-                # Установите уровень вывода отладки
-                self.conn.set_debuglevel(self.FTP_DEBUG)
-                # Включение пассивного режима
-                self.conn.set_pasv(True)
-            except ftplib.error_perm as err:
-                print("Ошибка: ".format(str(err)))
+    def connect(self):
+        try:
+            self.conn = ftplib.FTP(self.host, self.username, self.password)
+            # Переключение в двоичный режим
+            self.conn.sendcmd("TYPE i")
+            # оптимизировать параметры сокета для задачи загрузки
+            self.conn.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            # Установите уровень вывода отладки
+            self.conn.set_debuglevel(self.FTP_DEBUG_LEVEL)
+            # Включение пассивного режима
+            self.conn.set_pasv(True)
+        except ftplib.error_perm as err:
+            print("Ошибка: ".format(str(err)))
 
-        def diaconnect(self):
-            self.conn.quit()
+    def diaconnect(self):
+        self.conn.quit()
 
 if __name__ == "__main__":
     path = '/'
     filename = ''
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
-    ftp = FTP_Connection('','','')
+    ftp = FtpConnection('10.58.2.23', 'ftp-user', 'Qw123456')
     ftp.put_file(path + filename, path + filename)
     pass
 
